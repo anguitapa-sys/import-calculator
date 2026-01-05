@@ -83,7 +83,7 @@ async function buscarModelos() {
     cilindrada: Number(document.getElementById("cilindrada").value)
   };
 
-  const res = await fetch("http://127.0.0.1:8000/api/buscar-modelos", {
+  const res = await fetch("https://import-backend-d8n1.onrender.com/api/buscar-modelos", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
