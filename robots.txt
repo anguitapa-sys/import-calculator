@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://import-calculator-1st-edition.vercel.app/sitemap.xml
