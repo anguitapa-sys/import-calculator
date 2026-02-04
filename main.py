@@ -3,9 +3,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
 import json
+import os
+from openai import OpenAI
+
 import re
+from collections import OrderedDict
 
 app = FastAPI()
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
 
 # ============================================================
 # CORS
@@ -26,6 +32,12 @@ app.add_middleware(
 with open("salida_fusionada.json", "r", encoding="utf-8") as f:
     VALORES_VENALES = json.load(f)
 
+# Índice por marca y preprocesado ligero
+INDEX_POR_MARCA = {}
+# Cache LRU para búsquedas de modelos (máx 20 entradas)
+BUSQUEDA_CACHE: "OrderedDict[str, list]" = OrderedDict()
+BUSQUEDA_CACHE_MAX = 20
+
 # ============================================================
 # COEFICIENTES IVTM (EJEMPLOS PRINCIPALES)
 # ============================================================
@@ -43,6 +55,7 @@ COEFICIENTES_MUNICIPALES = {
     "GETAFE": 1.45,
     "LEGANES": 1.45,
 }
+
 BONIFICACION_ELECTRICOS = {
     "MADRID": 0.75,
     "BARCELONA": 0.75,
@@ -331,6 +344,48 @@ def coincide_modelo_inteligente(tokens_user, tokens_item):
     return score_nombre
 
 # ============================================================
+# PREPROCESADO BOE E ÍNDICE
+# ============================================================
+
+def preprocesar_boe():
+    """
+    Normaliza y enriquece VALORES_VENALES una sola vez.
+    Construye un índice por marca para acelerar las búsquedas.
+    """
+    for idx, item in enumerate(VALORES_VENALES):
+        marca_raw = item.get("marca", "")
+        modelo_raw = item.get("modelo_limpio", "") or item.get("modelo", "")
+
+        marca_norm = normalizar(marca_raw)
+        modelo_norm = normalizar(modelo_raw)
+        modelo_toks = tokens_modelo(modelo_norm)
+        combustible_norm = normalizar_combustible(item.get("combustible"))
+
+        item["_marca_norm"] = marca_norm
+        item["_modelo_norm"] = modelo_norm
+        item["_modelo_tokens"] = modelo_toks
+        item["_combustible_norm"] = combustible_norm
+
+        # Cacheo suave de cc y cv como float
+        try:
+            item["_cc"] = float(item["cc"]) if item.get("cc") is not None else None
+        except Exception:
+            item["_cc"] = None
+
+        try:
+            item["_cv"] = float(item["cv"]) if item.get("cv") is not None else None
+        except Exception:
+            item["_cv"] = None
+
+        # Índice por marca
+        if marca_norm not in INDEX_POR_MARCA:
+            INDEX_POR_MARCA[marca_norm] = []
+        INDEX_POR_MARCA[marca_norm].append(idx)
+
+# Llamamos al preprocesado al arrancar
+preprocesar_boe()
+
+# ============================================================
 # MATCHING BOE
 # ============================================================
 
@@ -345,10 +400,9 @@ def score_modelo_boe(
 ):
     score = 0.0
 
-    marca_item = normalizar(item.get("marca", ""))
-    modelo_item_norm = normalizar(item.get("modelo_limpio", "") or item.get("modelo", ""))
-    modelo_tokens_item = tokens_modelo(modelo_item_norm)
-    combustible_item = str(item.get("combustible", "") or "").upper()
+    marca_item = item.get("_marca_norm", normalizar(item.get("marca", "")))
+    modelo_tokens_item = item.get("_modelo_tokens", [])
+    combustible_item_norm = item.get("_combustible_norm", "")
 
     # Marca obligatoria
     if marca_norm and marca_item != marca_norm:
@@ -371,9 +425,10 @@ def score_modelo_boe(
             score -= 30.0
 
     # Cilindrada
-    if cilindrada is not None and item.get("cc") is not None:
+    cc_item = item.get("_cc")
+    if cilindrada is not None and cc_item is not None:
         try:
-            diff_cc = abs(float(item["cc"]) - float(cilindrada))
+            diff_cc = abs(cc_item - float(cilindrada))
             if diff_cc <= 100:
                 score += 20.0
             elif diff_cc <= 200:
@@ -384,9 +439,10 @@ def score_modelo_boe(
             pass
 
     # Potencia
-    if potencia_cv is not None and item.get("cv") is not None:
+    cv_item = item.get("_cv")
+    if potencia_cv is not None and cv_item is not None:
         try:
-            diff_cv = abs(float(item["cv"]) - float(potencia_cv))
+            diff_cv = abs(cv_item - float(potencia_cv))
             if diff_cv <= 10:
                 score += 20.0
             elif diff_cv <= 20:
@@ -399,7 +455,7 @@ def score_modelo_boe(
     # Combustible
     if combustible_usuario:
         comb_user = normalizar_combustible(combustible_usuario)
-        comb_item = normalizar_combustible(combustible_item)
+        comb_item = combustible_item_norm
 
         if comb_user and comb_item == comb_user:
             score += 15.0
@@ -407,6 +463,41 @@ def score_modelo_boe(
             score -= 30.0
 
     return score
+
+
+def _clave_cache_busqueda(
+    marca: Optional[str],
+    modelo: Optional[str],
+    anio: Optional[int],
+    combustible: Optional[str],
+    cilindrada: Optional[float],
+    potencia: Optional[float],
+) -> str:
+    marca_norm = normalizar(marca)
+    modelo_norm = normalizar(modelo)
+    combustible_norm = normalizar_combustible(combustible or "")
+    # Redondeo suave para no explotar claves por pequeñas variaciones
+    cil = round(cilindrada or 0, 0)
+    pot = round(potencia or 0, 0)
+    return f"{marca_norm}|{modelo_norm}|{anio or ''}|{combustible_norm}|{cil}|{pot}"
+
+
+def _cache_get(clave: str):
+    if clave in BUSQUEDA_CACHE:
+        # Mover al final (LRU)
+        valor = BUSQUEDA_CACHE.pop(clave)
+        BUSQUEDA_CACHE[clave] = valor
+        return valor
+    return None
+
+
+def _cache_set(clave: str, valor):
+    if clave in BUSQUEDA_CACHE:
+        BUSQUEDA_CACHE.pop(clave)
+    BUSQUEDA_CACHE[clave] = valor
+    # Limitar tamaño
+    if len(BUSQUEDA_CACHE) > BUSQUEDA_CACHE_MAX:
+        BUSQUEDA_CACHE.popitem(last=False)
 
 
 def buscar_modelos_coincidentes(
@@ -422,9 +513,30 @@ def buscar_modelos_coincidentes(
     modelo_norm = normalizar(modelo)
     modelo_tokens_user = tokens_modelo(modelo_norm)
 
+    # Cache: si esta combinación ya se buscó, devolvemos al instante
+    clave_cache = _clave_cache_busqueda(
+        marca, modelo, anio, combustible, cilindrada, potencia
+    )
+    cache_res = _cache_get(clave_cache)
+    if cache_res is not None:
+        return cache_res
+
     resultados = []
 
-    for idx, item in enumerate(VALORES_VENALES):
+    # Si tenemos marca, usamos índice; si no, recorremos todo (caso raro)
+    if marca_norm and marca_norm in INDEX_POR_MARCA:
+        indices = INDEX_POR_MARCA[marca_norm]
+        iterable = (VALORES_VENALES[i] for i in indices)
+    else:
+        iterable = VALORES_VENALES
+
+    for idx, item in enumerate(iterable):
+        # Si usamos índice, idx no es el índice real -> lo buscamos
+        if "_marca_norm" in item:
+            real_index = VALORES_VENALES.index(item)
+        else:
+            real_index = idx
+
         s = score_modelo_boe(
             item=item,
             marca_norm=marca_norm,
@@ -440,7 +552,7 @@ def buscar_modelos_coincidentes(
 
         resultados.append(
             ModeloCoincidente(
-                indice=idx,
+                indice=real_index,
                 marca=item.get("marca", ""),
                 modelo=item.get("modelo_limpio", "") or item.get("modelo", ""),
                 anio_inicio=item.get("año_inicio"),
@@ -456,7 +568,12 @@ def buscar_modelos_coincidentes(
         )
 
     resultados.sort(key=lambda x: x.puntuacion, reverse=True)
-    return resultados[:max_resultados]
+    resultados = resultados[:max_resultados]
+
+    # Guardamos en cache (lista de ModeloCoincidente)
+    _cache_set(clave_cache, resultados)
+
+    return resultados
 
 
 # ============================================================
@@ -476,29 +593,100 @@ async def buscar_modelos(datos: BusquedaModelo):
     return {"coincidencias": [c.dict() for c in coincidencias]}
 
 # ============================================================
-# IA SIMPLIFICADA (PLACEHOLDER)
+# IA 
 # ============================================================
 
 @app.post("/api/preguntar-ia")
 async def preguntar_ia(payload: dict):
     tipo = payload.get("tipo")
 
-    if tipo == "cilindrada":
-        return {"cilindrada": 1995}
+    # --------------------------------------------
+    # 1) DATOS DEL COCHE: CILINDRADA + EMISIONES
+    # --------------------------------------------
+    if tipo in ["datos_coche", "cilindrada", "emisiones"]:
+        marca = payload.get("marca")
+        modelo = payload.get("modelo")
+        anio = payload.get("anio")
+        combustible = payload.get("combustible")
+        potencia = payload.get("potencia")
 
-    if tipo == "emisiones":
-        return {"emisiones_co2": 120}
+        prompt = f"""
+          Dame la cilindrada en cc y las emisiones de CO2 en g/km del siguiente coche.
+          Usa valores homologados típicos de fábrica.
 
+          Devuelve SOLO un JSON:
+
+          {{
+            "cilindrada": número,
+            "emisiones_co2": número
+          }}
+
+          Marca: {marca}
+          Modelo: {modelo}
+          Año: {anio}
+          Combustible: {combustible}
+          Potencia: {potencia}
+          """ 
+
+
+ 
+
+
+
+
+        completion = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            response_format={"type": "json_object"},
+        )
+
+        data = completion.choices[0].message.parsed
+
+        # Compatibilidad con llamadas antiguas
+        if tipo == "cilindrada":
+            return {"cilindrada": data.get("cilindrada")}
+        if tipo == "emisiones":
+            return {"emisiones_co2": data.get("emisiones_co2")}
+
+        return data
+
+    # --------------------------------------------
+    # 2) COEFICIENTE IVTM (FALLBACK IA)
+    # --------------------------------------------
     if tipo == "coeficiente_ivtm":
-        cvf = payload.get("cvf", 10)
-        if cvf < 12:
-            return {"coeficiente": 1.2}
-        elif cvf < 16:
-            return {"coeficiente": 1.4}
-        else:
-            return {"coeficiente": 1.6}
+        municipio = payload.get("municipio")
+        provincia = payload.get("provincia")
+        cvf = payload.get("cvf")
+
+        muni_norm = normalizar(municipio or "")
+        if muni_norm in COEFICIENTES_MUNICIPALES:
+            return {"coeficiente": COEFICIENTES_MUNICIPALES[muni_norm]}
+
+        prompt = f"""
+        Dame el coeficiente del impuesto de circulación (IVTM)
+        para este municipio español y esta potencia fiscal.
+
+        Devuelve SOLO un JSON válido:
+
+        {{
+          "coeficiente": número
+        }}
+
+        Municipio: {municipio}
+        Provincia: {provincia}
+        Potencia fiscal (CVF): {cvf}
+        """
+
+        completion = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            response_format={"type": "json_object"},
+        )
+
+        return completion.choices[0].message.parsed
 
     raise HTTPException(status_code=400, detail="Tipo de IA no reconocido")
+
 
 # ============================================================
 # IMPUESTOS Y COSTES
@@ -565,6 +753,7 @@ def estimar_ivtm(modelo_boe: dict, datos: SolicitudCalculo):
     # BONIFICACIÓN PARA ELÉCTRICOS
     # -------------------------------
     combustible_norm = normalizar_combustible(modelo_boe.get("combustible"))
+    bonificacion = 0.0
 
     if combustible_norm == "ELECTRICO":
         muni_norm = normalizar(datos.municipio_matriculacion)
@@ -580,7 +769,6 @@ def estimar_ivtm(modelo_boe: dict, datos: SolicitudCalculo):
         "bonificacion_electrico": bonificacion if combustible_norm == "ELECTRICO" else 0.0,
         "importe": round(importe, 2),
     }
-
 
 
 def calcular_costes_fijos(
