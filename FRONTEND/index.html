@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="es">
+<head> <!-- SEO básico -->
+<title>Calculadora de Importación de Vehículos | Import Calculator</title>
+<meta name="description" content="Calcula fácilmente el coste total de importar un vehículo: aranceles, IVA, matriculación y más. Herramienta rápida, precisa y actualizada.">
+
+<title>Calculadora de Importación de Coches | Costes, Impuestos y Matriculación</title>
+
+<meta name="description" content="Calcula el coste total de importar un coche: aranceles, IVA, transporte, matriculación, IVTM y más. Herramienta profesional y actualizada para importadores.">
+
+<meta property="og:title" content="Calculadora de Importación de Coches">
+<meta property="og:description" content="Herramienta profesional para calcular todos los costes de importar un vehículo.">
+<meta property="og:image" content="https://import-calculator-1st-edition.vercel.app/preview.jpg">
+<meta property="og:url" content="https://import-calculator-1st-edition.vercel.app/">
+<meta property="og:type" content="website">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Calculadora de Importación de Coches">
+<meta name="twitter:description" content="Calcula el coste total de importar un coche: aranceles, IVA, transporte y matriculación.">
+<meta name="twitter:image" content="https://import-calculator-1st-edition.vercel.app/preview.jpg">
+
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+<!-- Canonical -->
+<link rel="canonical" href="https://import-calculator-1st-edition.vercel.app/">
+
+<!-- Open Graph (para WhatsApp, Facebook, LinkedIn) -->
+<meta property="og:title" content="Calculadora de Importación de Vehículos">
+<meta property="og:description" content="Calcula el coste total de importar un coche en segundos. Preciso, rápido y actualizado.">
+<meta property="og:url" content="https://import-calculator-1st-edition.vercel.app/">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://import-calculator-1st-edition.vercel.app/preview.jpg">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Calculadora de Importación de Vehículos">
+<meta name="twitter:description" content="Calcula el coste total de importar un coche en segundos.">
+<meta name="twitter:image" content="https://import-calculator-1st-edition.vercel.app/preview.jpg">
+
+<!-- Color del navegador -->
+<meta name="theme-color" content="#0A84FF">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Import Calculator",
+  "url": "https://import-calculator-1st-edition.vercel.app/",
+  "description": "Calculadora profesional para estimar el coste total de importar un vehículo: aranceles, IVA, matriculación y más.",
+  "applicationCategory": "FinanceApplication",
+  "operatingSystem": "All",
+  "browserRequirements": "Requires JavaScript",
+  "inLanguage": "es",
+  "image": "https://import-calculator-1st-edition.vercel.app/preview.jpg",
+  "author": {
+    "@type": "Person",
+    "name": "Eduardo"
+  },
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "EUR"
+  }
+}
+</script>
+
+<meta charset="UTF-8" />
+<title>Calculadora de Importación</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<style>
+.btn-ia-contraste {
+  background: var(--accent);
+  color: white;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: none;
+  font-size: .9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: .25s ease;
+  white-space: nowrap;
+}
+
+.btn-ia-contraste:hover {
+  background: var(--accent-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+.btn-spinner {
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: white;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+:root {
+--bg:#F9FAFB; --card:#FFFFFF; --card-soft:#F1F3F5; --border:#E5E7EB;
+--text:#1A1A1A; --text-soft:#5A5A5A; --accent:#3A7BFF; --accent-hover:#2F6DE0;
+--radius:14px; --shadow:0 8px 25px rgba(0,0,0,0.08); --shadow-hover:0 12px 35px rgba(0,0,0,0.12);
+--check-color:#3A7BFF;
+}
+.dark {
+--bg:#0F0F0F; --card:#1A1A1A; --card-soft:#222222; --border:#2A2A2A;
+--text:#EDEDED; --text-soft:#A0A0A0; --accent:#FF3B30; --accent-hover:#E13228;
+--shadow:0 8px 25px rgba(0,0,0,0.45); --shadow-hover:0 12px 35px rgba(0,0,0,0.55);
+--check-color:#FF3B30;
+}
+
+body {
+margin:0; padding:30px; font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+background:var(--bg); color:var(--text); display:flex; justify-content:center;
+transition:background .3s ease,color .3s ease;
+}
+
+.container { width:100%; max-width:1100px; animation:fadeIn .6s ease; }
+@keyframes fadeIn { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+
+h1 { font-size:1.9rem; font-weight:600; margin-bottom:10px; }
+
+.card {
+background:var(--card); border-radius:var(--radius); padding:25px; margin-bottom:25px;
+border:1px solid var(--border); box-shadow:var(--shadow); transition:.25s ease;
+}
+.card:hover { box-shadow:var(--shadow-hover); transform:translateY(-2px); }
+
+label { font-size:.9rem; font-weight:500; margin-bottom:4px; display:block; color:var(--text-soft); }
+
+input,select {
+width:100%; padding:12px 14px; border-radius:10px; border:1px solid var(--border);
+background:var(--card-soft); color:var(--text); font-size:.95rem; margin-bottom:15px; transition:.25s ease;
+}
+input:focus,select:focus {
+border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-hover); outline:none; background:var(--card);
+}
+
+.row { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+@media(max-width:700px){ .row{grid-template-columns:1fr;} }
+
+button {
+padding:12px 22px; border-radius:10px; border:none; background:var(--accent);
+color:#fff; font-size:1rem; font-weight:600; cursor:pointer; transition:.25s ease;
+}
+button:hover { background:var(--accent-hover); transform:translateY(-2px); box-shadow:0 10px 25px rgba(0,0,0,.25); }
+
+.btn-ia { background:var(--card-soft); color:var(--text); margin-top:-5px; margin-bottom:10px; }
+.btn-ia:hover { background:var(--border); transform:translateY(-1px); }
+
+.checkbox-line { display:flex; align-items:center; gap:10px; width:fit-content; margin:10px 0; }
+.checkbox-line input[type=checkbox] {
+appearance:none; width:18px; height:18px; border:2px solid var(--border); border-radius:4px;
+background:var(--card-soft); cursor:pointer; position:relative; transition:.2s ease;
+}
+.checkbox-line input[type=checkbox]:checked { border-color:var(--check-color); background:var(--check-color); }
+.checkbox-line input[type=checkbox]:checked::after {
+content:"✔"; position:absolute; top:-2px; left:2px; font-size:14px; color:white; font-weight:bold;
+}
+
+.section-title {
+margin:30px 0 15px 0; font-size:1rem; font-weight:600; color:var(--text-soft);
+border-bottom:1px solid var(--border); padding-bottom:8px;
+}
+
+.error { color:var(--accent); margin-top:10px; font-weight:500; }
+
+/* MODAL */
+#modalOverlay {
+position:fixed; top:0; left:0; width:100%; height:100%;
+background:rgba(0,0,0,.55); display:none; justify-content:center; align-items:center; z-index:99999;
+}
+
+#modalBox {
+background:var(--card); padding:25px; border-radius:14px; width:90%; max-width:600px;
+box-shadow:var(--shadow-hover); border:1px solid var(--border);
+}
+
+/* Scroll lista modelos */
+#listaModelos {
+max-height: 320px;
+overflow-y: auto;
+padding-right: 4px;
+}
+
+/* Tarjetas modelos */
+.modelo-card {
+  padding:12px;
+  border-radius:10px;
+  background:var(--card-soft);
+  border:1px solid var(--border);
+  margin-bottom:10px;
+  cursor:pointer;
+
+  /* 🔥 Añadido para permitir saltos de línea */
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+.modelo-card.selected { border-color:var(--accent); background:var(--accent); color:white; }
+
+/* Flecha rotatoria SOLO en la flecha */
+.desglose-btn {
+cursor:pointer;
+display:inline-flex;
+align-items:center;
+gap:4px;
+font-size:.9rem;
+}
+
+.desglose-btn .flecha {
+display:inline-block;
+transition:transform .25s ease;
+}
+
+.desglose-btn.abierto .flecha {
+transform:rotate(180deg);
+}
+
+.desglose {
+display:none;
+padding:6px 0 0;
+font-size:.82rem;
+color:var(--text-soft);
+}
+.desglose.visible {
+display:block;
+}
+
+/* FACTURA PREMIUM */
+.factura-card {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 28px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  margin-top: 25px;
+}
+
+.factura-header {
+  margin-bottom: 20px;
+}
+
+.factura-header h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.factura-meta {
+  margin-top: 6px;
+  font-size: .85rem;
+  color: var(--text-soft);
+}
+
+.factura-grid-r3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+  margin-top: 20px;
+}
+
+.factura-chip {
+  background: var(--card-soft);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: .25s ease;
+}
+
+.factura-chip:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+
+.factura-chip span {
+  font-size: .9rem;
+  font-weight: 500;
+}
+
+.factura-total-r3 {
+  margin-top: 25px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.volver-btn {
+  margin-top: 25px;
+  background: var(--accent);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: .25s ease;
+}
+
+.volver-btn:hover {
+  background: var(--accent-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+/* TOOLTIP PREMIUM */
+.tooltip-info {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 6px;
+  font-size: .85rem;
+  color: var(--accent);
+  cursor: pointer;
+  user-select: none;
+}
+
+.tooltip-info:hover .tooltip-box {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.tooltip-box {
+  position: absolute;
+  top: 22px;
+  left: 0;
+  width: 260px;
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  font-size: .82rem;
+  line-height: 1.35rem;
+  box-shadow: var(--shadow);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(6px);
+  transition: .25s ease;
+  z-index: 20;
+}
+.info-icon {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-right: 6px;
+  transition: .25s ease;
+}
+
+.dark .info-icon {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.info-icon:hover {
+  transform: scale(1.15);
+}
+
+</style>
+</head>
+
+<body>
+<div id="loading-screen">
+  <div class="spin-ring"></div>
+  <p>Calculando importación...</p>
+</div>
+
+
+
+
+<style>
+ /* LOADER GLOBAL */
+#loading-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  font-size: 1.2rem;
+  z-index: 999999 !important;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+#loading-screen.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* ============================
+   LOADER MODERNO (GIRO + GLOW)
+   ============================ */
+
+.spin-ring {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: 4px solid var(--border);
+  border-top-color: var(--accent);
+  animation: spin 1s linear infinite, glow 1.8s ease-in-out infinite;
+}
+
+/* Giro perfecto */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Glow suave sin deformar */
+@keyframes glow {
+  0% { box-shadow: 0 0 4px var(--accent); }
+  50% { box-shadow: 0 0 14px var(--accent); }
+  100% { box-shadow: 0 0 4px var(--accent); }
+}
+
+</style>
+
+
+
+
+<div class="container">
+
+<h1>Calculadora de Importación</h1>
+
+<button id="darkToggle" onclick="toggleDarkMode()" class="modo-oscuro-btn">
+  Modo oscuro
+</button>
+
+<!-- CALCULADORA -->
+<div class="card" id="pantallaCalculadora">
+
+<div class="section-title">Datos del vehículo</div>
+
+<div class="row">
+<div>
+<label>Marca</label>
+<input id="marca" placeholder="Ej: Mercedes">
+</div>
+
+<div>
+<label>Modelo</label>
+<input id="modelo" placeholder="Ej: C220 CDI">
+</div>
+
+<div>
+<label>Año</label>
+<input id="anio" type="number" placeholder="Ej: 2007">
+</div>
+
+<div>
+  <label>Kilómetros</label>
+  <input id="kilometros" type="number" placeholder="Ej: 4500">
+</div>
+
+<div>
+<label>Combustible</label>
+<select id="combustible">
+<option value="G">Gasolina</option>
+<option value="D">Diésel</option>
+<option value="Elc">Eléctrico</option>
+<option value="H">Híbrido</option>
+<option value="PHEV">Híbrido enchufable</option>
+<option value="GLP">GLP</option>
+<option value="GNC">GNC</option>
+</select>
+</div>
+
+<div>
+<label>Potencia (CV)</label>
+<input id="potencia" type="number" placeholder="Ej: 150">
+</div>
+
+<div>
+  <label>Cilindrada (cc)</label>
+  <div style="display:flex; gap:10px;">
+    <input id="cilindrada" type="number" placeholder="Ej: 2148" style="flex:1;">
+    <button type="button" class="btn-ia-contraste" onclick="rellenarCilindradaIA(event)">
+
+      Rellenar con IA
+    </button>
+  </div>
+</div>
+<div id="msg_cilindrada" style="font-size:0.85rem; margin-top:4px; margin-bottom:10px;"></div>
+
+
+
+<div>
+  <label>Emisiones CO₂</label>
+  <div style="display:flex; gap:10px;">
+    <input id="emisiones_co2" type="number" placeholder="Ej: 120" style="flex:1;">
+    <button type="button" class="btn-ia-contraste" onclick="rellenarEmisionesIA(event)">
+
+      Rellenar con IA
+    </button>
+  </div>
+</div>
+<div id="msg_emisiones" style="font-size:0.85rem; margin-top:4px; margin-bottom:10px;"></div>
+
+
+<div class="section-title">Datos de compra</div>
+
+<div class="campo-con-tooltip">
+  <label>Tipo de compra</label>
+
+  <div class="tooltip-info">
+    <span class="info-icon">i</span>
+    <div class="tooltip-box">
+      Indica si compras el vehículo a un particular o a una empresa.  
+      Esto determina si pagas IVA o ITP.
+    </div>
+  </div>
+
+  <select id="tipo_compra">
+    
+    <option value="empresa">Empresa / Concesionario</option>
+    <option value="particular">Particular</option>
+  </select>
+</div>
+
+
+<div id="bloque_iva">
+  <label>¿El precio incluye IVA?</label>
+  <select id="iva_incluido">
+    <option value="si">Sí, IVA incluido</option>
+    <option value="no">No, IVA no incluido</option>
+    <option value="margen">Régimen de margen</option>
+  </select>
+</div>
+
+
+
+<label>Precio</label>
+<input type="number" id="precio_base" placeholder="Introduce el precio">
+
+
+<label>País de origen</label>
+<input id="pais_origen" placeholder="Ej: Alemania">
+
+
+<div class="section-title">Matriculación y trámites</div>
+
+<div class="row">
+<div>
+<label>Provincia matriculación</label>
+<input id="provincia_matriculacion" placeholder="Ej: Madrid">
+</div>
+
+<div>
+<label>Municipio matriculacion</label>
+<input id="municipio_matriculacion" placeholder="Ej: Alcorcón">
+</div>
+</div>
+<div id="msg_ivtm_preview" style="margin-top:-5px; font-size:0.9rem; color:var(--text-soft);"></div>
+
+<div class="tooltip-info">
+  <span class="info-icon">i</span> 
+  <div class="tooltip-box">
+    Es la inspección técnica obligatoria para matricular un vehículo extranjero en España.
+  </div>
+</div>
+
+
+<label>Tipo de ITV</label>
+<select id="tipo_itv">
+<option value="normal">ITV normal</option>
+<option value="ue">ITV importación UE</option>
+<option value="unitaria">ITV unitaria</option>
+</select>
+
+
+<div class="tooltip-info">
+  <span class="info-icon">i</span> 
+  <div class="tooltip-box">
+    Son matrículas temporales que permiten circular mientras se tramita la matriculación definitiva.
+  </div>
+</div>
+
+
+<label>¿Necesitas placas verdes?</label>
+<select id="placas_verdes">
+<option value="no">No</option>
+<option value="si">Sí</option>
+</select>
+
+
+<label>¿Incluir matrículas españolas?</label>
+<select id="matriculas_espanolas">
+<option value="no">No</option>
+<option value="si">Sí</option>
+</select>
+
+<div class="checkbox-line">
+<input type="checkbox" id="incluir_gestoria">
+<label for="incluir_gestoria">Incluir gestoría</label>
+</div>
+
+<button onclick="buscarModelos()">Calcular</button>
+
+<div id="error" class="error"></div>
+
+</div>
+<!-- FACTURA PREMIUM -->
+<div id="pantallaFactura" style="display:none;">
+  <div class="factura-card">
+
+    <div class="factura-header">
+      <h2>Resumen de importación</h2>
+      <div class="factura-meta">
+        <div id="f_meta_vehiculo"></div>
+        <div id="f_meta_origen"></div>
+      </div>
+    </div>
+
+    <div class="factura-grid-r3">
+
+      <!-- PRECIO BASE -->
+      <div class="factura-chip">
+        <div>
+          <span>Precio base</span>
+          <div class="desglose-btn" onclick="toggleDesglose('d_precio', this)">
+            <span class="flecha">▼</span>
+          </div>
+          <div id="d_precio" class="desglose"></div>
+        </div>
+        <strong id="f_precio_base"></strong>
+      </div>
+
+      <!-- IVA -->
+      <div class="factura-chip">
+        <div>
+          <span>IVA incluido</span>
+          <div class="desglose-btn" onclick="toggleDesglose('d_iva', this)">
+            <span class="flecha">▼</span>
+          </div>
+          <div id="d_iva" class="desglose"></div>
+        </div>
+        <strong id="f_iva_incluido"></strong>
+      </div>
+
+      <!-- ITP -->
+      <div class="factura-chip">
+        <div>
+          <span>ITP</span>
+          <div class="desglose-btn" onclick="toggleDesglose('d_itp', this)">
+            <span class="flecha">▼</span> Desglose
+          </div>
+          <div id="d_itp" class="desglose"></div>
+        </div>
+        <strong id="f_itp"></strong>
+      </div>
+
+      <!-- ITV -->
+      <div class="factura-chip">
+        <div>
+          <span>ITV</span>
+          <div class="desglose-btn" onclick="toggleDesglose('d_itv', this)">
+            <span class="flecha">▼</span>
+          </div>
+          <div id="d_itv" class="desglose"></div>
+        </div>
+        <strong id="f_itv"></strong>
+      </div>
+
+      <!-- MATRICULACIÓN -->
+      <div class="factura-chip">
+        <div>
+          <span>Matriculación</span>
+          <div class="desglose-btn" onclick="toggleDesglose('d_matriculacion', this)">
+            <span class="flecha">▼</span>
+          </div>
+          <div id="d_matriculacion" class="desglose"></div>
+        </div>
+        <strong id="f_matriculacion"></strong>
+      </div>
+
+      <!-- IMPUESTO MATRICULACIÓN CO₂ -->
+      <div class="factura-chip">
+        <div>
+          <span>Imp. Matriculación (CO₂)</span>
+          <div class="desglose-btn" onclick="toggleDesglose('d_matriculacion_co2', this)">
+            <span class="flecha">▼</span> Desglose
+          </div>
+          <div id="d_matriculacion_co2" class="desglose"></div>
+        </div>
+        <strong id="f_matriculacion_co2"></strong>
+      </div>
+
+      <!-- CIRCULACIÓN -->
+      <div class="factura-chip">
+        <div>
+          <span>Impuesto Circulación</span>
+          <div class="desglose-btn" onclick="toggleDesglose('d_circulacion', this)">
+            <span class="flecha">▼</span> Desglose
+          </div>
+          <div id="d_circulacion" class="desglose"></div>
+        </div>
+        <strong id="f_circulacion"></strong>
+      </div>
+
+      <!-- PLACAS -->
+      <div class="factura-chip">
+        <div>
+          <span>Placas verdes</span>
+          <div class="desglose-btn" onclick="toggleDesglose('d_placas', this)">
+            <span class="flecha">▼</span>
+          </div>
+          <div id="d_placas" class="desglose"></div>
+        </div>
+        <strong id="f_placas_verdes"></strong>
+      </div>
+
+      <!-- MATRÍCULAS -->
+      <div class="factura-chip">
+        <div>
+          <span>Matrículas</span>
+          <div class="desglose-btn" onclick="toggleDesglose('d_matriculas', this)">
+            <span class="flecha">▼</span>
+          </div>
+          <div id="d_matriculas" class="desglose"></div>
+        </div>
+        <strong id="f_matriculas"></strong>
+      </div>
+
+      <!-- GESTORÍA -->
+      <div class="factura-chip">
+        <div>
+          <span>Gestoría</span>
+          <div class="desglose-btn" onclick="toggleDesglose('d_gestoria', this)">
+            <span class="flecha">▼</span>
+          </div>
+          <div id="d_gestoria" class="desglose"></div>
+        </div>
+        <strong id="f_gestoria"></strong>
+      </div>
+
+    </div>
+
+    <div class="factura-total-r3">
+      <span>Total estimado</span>
+      <strong id="f_total"></strong>
+    </div>
+
+    <button class="volver-btn" onclick="volverCalculadora()">Volver a la calculadora</button>
+
+  </div>
+</div>
+
+<!-- MODAL -->
+<div id="modalOverlay">
+  <div id="modalBox">
+    <h3>Selecciona el modelo correcto</h3>
+    <div id="listaModelos"></div>
+    <button id="continuarBtn" style="display:none; margin-top:10px;" onclick="confirmarModelo()">Continuar</button>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
