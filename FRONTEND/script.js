@@ -53,19 +53,179 @@ function toggleDesglose(id, btn) {
 }
 
 /* ============================
-   IA (simulada)
+   IA 
 ============================ */
-function rellenarCilindrada() {
+async function rellenarConIA(event) {
+  const marca = document.getElementById("marca").value.trim();
   const modelo = document.getElementById("modelo").value.trim();
-  if (!modelo) return alert("Introduce un modelo primero");
-  document.getElementById("cilindrada").value = 2148;
+  const anio = Number(document.getElementById("anio").value);
+  const combustible = document.getElementById("combustible").value;
+  const potencia = Number(document.getElementById("potencia").value);
+
+  if (!marca || !modelo || !anio || !combustible || !potencia) {
+    alert("Rellena marca, modelo, año, combustible y potencia antes de usar la IA.");
+    return;
+  }
+
+  try {
+    const res = await fetch("https://import-backend-d8n1.onrender.com/api/preguntar-ia", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tipo: "datos_coche",
+        marca,
+        modelo,
+        anio,
+        combustible,
+        potencia
+      })
+    });
+
+    const data = await res.json();
+
+    if (data.cilindrada) {
+      document.getElementById("cilindrada").value = data.cilindrada;
+    }
+    if (data.emisiones_co2) {
+      document.getElementById("emisiones_co2").value = data.emisiones_co2;
+    }
+
+    alert("Datos rellenados con IA correctamente.");
+
+  } catch (err) {
+    console.error("Error IA:", err);
+    alert("Error al obtener datos desde la IA.");
+  }
 }
 
-function rellenarEmisiones() {
+async function rellenarCilindradaIA(event) {
+  const marca = document.getElementById("marca").value.trim();
   const modelo = document.getElementById("modelo").value.trim();
-  if (!modelo) return alert("Introduce un modelo primero");
-  document.getElementById("emisiones_co2").value = 120;
+  const anio = Number(document.getElementById("anio").value);
+  const combustible = document.getElementById("combustible").value;
+  const potencia = Number(document.getElementById("potencia").value);
+  const msg = document.getElementById("msg_cilindrada");
+  const boton = event.target;
+  const original = boton.innerHTML;
+  boton.disabled = true;
+  boton.innerHTML = `<span class="btn-spinner"></span> Cargando…`;
+
+  msg.textContent = "";
+
+  if (!marca || !modelo || !anio || !combustible || !potencia) {
+  msg.textContent = "Rellena marca, modelo, año, combustible y potencia antes de usar la IA.";
+  msg.style.color = "var(--accent)";
+  boton.disabled = false;
+  boton.innerHTML = original;
+  return;
 }
+
+
+  try {
+    const res = await fetch("https://import-backend-d8n1.onrender.com/api/preguntar-ia", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tipo: "datos_coche",
+        marca,
+        modelo,
+        anio,
+        combustible,
+        potencia
+      })
+    });
+
+    const data = await res.json();
+
+     // La IA devuelve un JSON dentro de un string → hay que parsearlo
+     let parsed = {};
+     try {
+        parsed = JSON.parse(data.respuesta);
+       } catch (e) {
+        console.error("Error parseando JSON IA:", e);
+    }
+
+if (parsed.cilindrada) {
+  document.getElementById("cilindrada").value = parsed.cilindrada;
+}
+
+
+  } catch (err) {
+    console.error(err);
+    msg.textContent = "Error al conectar con la IA.";
+    msg.style.color = "var(--accent)";
+  }
+  boton.disabled = false;
+  boton.innerHTML = original;
+}
+
+
+async function rellenarEmisionesIA(event) {
+  const marca = document.getElementById("marca").value.trim();
+  const modelo = document.getElementById("modelo").value.trim();
+  const anio = Number(document.getElementById("anio").value);
+  const combustible = document.getElementById("combustible").value;
+  const potencia = Number(document.getElementById("potencia").value);
+  const msg = document.getElementById("msg_emisiones");
+
+  const boton = event.target;
+  const original = boton.innerHTML;
+  boton.disabled = true;
+  boton.innerHTML = `<span class="btn-spinner"></span> Cargando…`;
+
+  msg.textContent = "";
+
+  if (!marca || !modelo || !anio || !combustible || !potencia) {
+    msg.textContent = "Rellena marca, modelo, año, combustible y potencia antes de usar la IA.";
+    msg.style.color = "var(--accent)";
+    boton.disabled = false;
+    boton.innerHTML = original;
+    return;
+  }
+
+  try {
+    const res = await fetch("https://import-backend-d8n1.onrender.com/api/preguntar-ia", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tipo: "datos_coche",
+        marca,
+        modelo,
+        anio,
+        combustible,
+        potencia
+      })
+    });
+
+    const data = await res.json();
+
+    // La IA devuelve JSON dentro de un string → hay que parsearlo
+    let parsed = {};
+    try {
+      parsed = JSON.parse(data.respuesta);
+    } catch (e) {
+      console.error("Error parseando JSON IA:", e);
+    }
+
+    if (parsed.emisiones_co2) {
+      document.getElementById("emisiones_co2").value = parsed.emisiones_co2;
+      msg.textContent = "Emisiones rellenadas correctamente con IA.";
+      msg.style.color = "green";
+    } else {
+      msg.textContent = "No se han podido obtener las emisiones.";
+      msg.style.color = "var(--accent)";
+    }
+
+  } catch (err) {
+    console.error(err);
+    msg.textContent = "Error al conectar con la IA.";
+    msg.style.color = "var(--accent)";
+  }
+
+  boton.disabled = false;
+  boton.innerHTML = original;
+}
+
 
 /* ============================
    BUSCAR MODELOS EN EL BACKEND
@@ -189,19 +349,54 @@ async function calcularIVTM(cilindrada, provincia, municipio) {
     };
   }
 
-  // 2) Si NO está → fallback local (sin IA)
-  for (const fila of IVTM_FALLBACK) {
-    if (cilindrada <= fila.max_cc) {
-      return {
-        origen: "fallback",
-        cv_fiscales: "—",
-        tarifa_base: "—",
-        coef_municipal: "—",
-        importe: fila.importe,
-        explicacion: "Cálculo estimado según cilindrada."
-      };
-    }
-  }
+ // 2) Si NO está → preguntar a la IA del backend
+try {
+  const res = await fetch("https://import-backend-d8n1.onrender.com/api/preguntar-ia", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      tipo: "coeficiente_ivtm",
+      municipio,
+      provincia,
+      cvf: 0.08 * Math.pow(cilindrada, 0.6)
+    })
+  });
+
+  const data = await res.json();
+  const coef = Number(data.coeficiente || 1.5);
+
+  const cv_fiscales = 0.08 * Math.pow(cilindrada, 0.6);
+
+  let tarifa_base = 0;
+  if (cv_fiscales <= 8) tarifa_base = 12.62;
+  else if (cv_fiscales <= 11.99) tarifa_base = 34.08;
+  else if (cv_fiscales <= 15.99) tarifa_base = 71.94;
+  else if (cv_fiscales <= 19.99) tarifa_base = 89.61;
+  else tarifa_base = 112.00;
+
+  const importe = tarifa_base * coef;
+
+  return {
+    origen: "ia",
+    cv_fiscales: cv_fiscales.toFixed(2),
+    tarifa_base,
+    coef_municipal: coef,
+    importe: Number(importe.toFixed(2)),
+    explicacion: "Coeficiente obtenido mediante IA (municipio no disponible en tabla)."
+  };
+
+} catch (err) {
+  console.error("Error IVTM IA:", err);
+  return {
+    origen: "fallback",
+    cv_fiscales: "—",
+    tarifa_base: "—",
+    coef_municipal: "—",
+    importe: 80,
+    explicacion: "Error con IA. Se usa estimación aproximada."
+  };
+}
+
 }
 
 // Mostrar/ocultar el bloque de IVA según tipo de compra
@@ -530,3 +725,28 @@ function toggleDarkMode() {
     btn.textContent = "Modo oscuro";
   }
 }
+async function recalcIVTM() {
+  const cilindrada = Number(document.getElementById("cilindrada").value);
+  const provincia = document.getElementById("provincia_matriculacion").value.trim();
+  const municipio = document.getElementById("municipio_matriculacion").value.trim();
+  const msg = document.getElementById("msg_ivtm_preview");
+
+  // Si falta algo, no mostramos nada
+  if (!cilindrada || !provincia || !municipio) {
+    msg.textContent = "";
+    return;
+  }
+
+  // Llamamos a tu función híbrida
+  const ivtm = await calcularIVTM(cilindrada, provincia, municipio);
+
+  if (!ivtm) {
+    msg.textContent = "";
+    return;
+  }
+
+  msg.textContent = `IVTM estimado: ${ivtm.importe} €`;
+}
+
+document.getElementById("provincia_matriculacion").addEventListener("input", recalcIVTM);
+document.getElementById("municipio_matriculacion").addEventListener("input", recalcIVTM);

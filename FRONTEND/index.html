@@ -68,6 +68,39 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
 <style>
+.btn-ia-contraste {
+  background: var(--accent);
+  color: white;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: none;
+  font-size: .9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: .25s ease;
+  white-space: nowrap;
+}
+
+.btn-ia-contraste:hover {
+  background: var(--accent-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+.btn-spinner {
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: white;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 :root {
 --bg:#F9FAFB; --card:#FFFFFF; --card-soft:#F1F3F5; --border:#E5E7EB;
 --text:#1A1A1A; --text-soft:#5A5A5A; --accent:#3A7BFF; --accent-hover:#2F6DE0;
@@ -465,15 +498,31 @@ display:block;
 </div>
 
 <div>
-<label>Cilindrada (cc)</label>
-<input id="cilindrada" type="number" placeholder="Ej: 2148">
+  <label>Cilindrada (cc)</label>
+  <div style="display:flex; gap:10px;">
+    <input id="cilindrada" type="number" placeholder="Ej: 2148" style="flex:1;">
+    <button type="button" class="btn-ia-contraste" onclick="rellenarCilindradaIA(event)">
+
+      Rellenar con IA
+    </button>
+  </div>
 </div>
+<div id="msg_cilindrada" style="font-size:0.85rem; margin-top:4px; margin-bottom:10px;"></div>
+
+
 
 <div>
-<label>Emisiones CO₂</label>
-<input id="emisiones_co2" type="number" placeholder="Ej: 120">
+  <label>Emisiones CO₂</label>
+  <div style="display:flex; gap:10px;">
+    <input id="emisiones_co2" type="number" placeholder="Ej: 120" style="flex:1;">
+    <button type="button" class="btn-ia-contraste" onclick="rellenarEmisionesIA(event)">
+
+      Rellenar con IA
+    </button>
+  </div>
 </div>
-</div>
+<div id="msg_emisiones" style="font-size:0.85rem; margin-top:4px; margin-bottom:10px;"></div>
+
 
 <div class="section-title">Datos de compra</div>
 
@@ -528,6 +577,7 @@ display:block;
 <input id="municipio_matriculacion" placeholder="Ej: Alcorcón">
 </div>
 </div>
+<div id="msg_ivtm_preview" style="margin-top:-5px; font-size:0.9rem; color:var(--text-soft);"></div>
 
 <div class="tooltip-info">
   <span class="info-icon">i</span> 
