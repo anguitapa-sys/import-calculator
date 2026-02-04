@@ -634,13 +634,13 @@ async def preguntar_ia(payload: dict):
 
 
 
-        completion = client.chat.completions.create(
+        completion = client.responses.create(
             model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
+            input=prompt,
             response_format={"type": "json_object"},
         )
 
-        data = completion.choices[0].message.parsed
+        data = completion.output[0].content[0].parsed
 
         # Compatibilidad con llamadas antiguas
         if tipo == "cilindrada":
@@ -677,13 +677,14 @@ async def preguntar_ia(payload: dict):
         Potencia fiscal (CVF): {cvf}
         """
 
-        completion = client.chat.completions.create(
+        completion = client.responses.create(
             model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
+            input=prompt,
             response_format={"type": "json_object"},
         )
 
-        return completion.choices[0].message.parsed
+        return completion.output[0].content[0].parsed
+
 
     raise HTTPException(status_code=400, detail="Tipo de IA no reconocido")
 
