@@ -687,6 +687,16 @@ async def preguntar_ia(payload: dict):
 
     raise HTTPException(status_code=400, detail="Tipo de IA no reconocido")
 
+# ============================================================
+# DEBUG: VER VARIABLES DE ENTORNO
+# ============================================================
+@app.get("/debug/env")
+def debug_env():
+    import os
+    return {
+        "OPENAI_API_KEY": os.getenv("OPENAI_API_KEY"),
+        "env_keys": list(os.environ.keys())
+    }
 
 # ============================================================
 # IMPUESTOS Y COSTES
